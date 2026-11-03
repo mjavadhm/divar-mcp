@@ -4,9 +4,12 @@ Provides tools for searching Divar ads, getting full ad details, and browsing ci
 """
 
 import sys
+import base64
 import logging
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Union
+import httpx
 from mcp.server.mcpserver import MCPServer
+import mcp.types as types
 
 from src.divar_client import DivarClient, COMMON_CATEGORIES
 
@@ -113,6 +116,61 @@ async def get_post_details(token_or_url: str) -> Dict[str, Any]:
             "status": "error",
             "message": f"خطا در دریافت مشخصات آگهی: {str(e)}",
         }
+
+
+@mcp.tool(
+    name="inspect_post_images",
+    description=(
+        "دانلود و تحویل تصاویر واقعی یک آگهی دیوار به هوش مصنوعی جهت ارزیابی بصری، "
+        "بررسی ضربه‌خوردگی، خط و خش، تمیزی ظاهر، اصالت کالا و وضعیت فیزیکی دستگاه با هوش بینایی."
+    ),
+)
+async def inspect_post_images(token_or_url: str, max_images: int = 3) -> List[Union[types.TextContent, types.ImageContent]]:
+    """
+    Fetches real images of a Divar ad and returns them as multimodal ImageContent
+    so the AI vision model can visually inspect the item.
+
+    :param token_or_url: توکن آگهی یا لینک دیوار
+    :param max_images: حداکثر تعداد تصاویر جهت دانلود و بررسی (پیش‌فرض ۳)
+    """
+    logger.info(f"Inspecting images for: {token_or_url}")
+    try:
+        detail = await client.get_post_details(token_or_url)
+        image_urls = detail.images[:max(1, min(max_images, 5))]
+        if not image_urls:
+            return [types.TextContent(type="text", text=f"این آگهی ({detail.title}) تصویری ندارد.")]
+
+        contents: List[Union[types.TextContent, types.ImageContent]] = [
+            types.TextContent(
+                type="text",
+                text=f"تصاویر آگهی «{detail.title}» ({len(image_urls)} تصویر):\n"
+                     f"لینک آگهی: {detail.url}\n"
+                     f"لطفاً وضعیت ظاهری، خط و خش، ضربه‌خوردگی و تمیزی دستگاه را بررسی کنید."
+            )
+        ]
+
+        async with httpx.AsyncClient(timeout=10.0) as http_c:
+            for i, url in enumerate(image_urls):
+                try:
+                    resp = await http_c.get(url)
+                    if resp.status_code == 200:
+                        mime = resp.headers.get("content-type", "image/jpeg").split(";")[0]
+                        b64_data = base64.b64encode(resp.content).decode("utf-8")
+                        contents.append(
+                            types.ImageContent(
+                                type="image",
+                                data=b64_data,
+                                mime_type=mime,
+                            )
+                        )
+                except Exception as img_err:
+                    logger.warning(f"Failed to fetch image {url}: {img_err}")
+
+        return contents
+    except Exception as e:
+        logger.error(f"inspect_post_images error: {e}", exc_info=True)
+        return [types.TextContent(type="text", text=f"خطا در دریافت تصاویر آگهی: {str(e)}")]
+
 
 
 @mcp.tool(

@@ -5,7 +5,7 @@ Tests for Divar Client and MCP Server
 import pytest
 import asyncio
 from src.divar_client import DivarClient, normalize_persian_numbers, parse_price_to_toman
-from src.mcp_server import mcp, search_divar, get_post_details, list_cities, list_categories
+from src.mcp_server import mcp, search_divar, get_post_details, list_cities, list_categories, inspect_post_images
 
 
 def test_persian_number_utils():
@@ -63,3 +63,13 @@ async def test_mcp_get_post_details():
         assert "post" in detail_res
         assert detail_res["post"]["token"] == token
         assert "title" in detail_res["post"]
+
+
+@pytest.mark.asyncio
+async def test_mcp_inspect_post_images():
+    search_res = await search_divar(query="لپ تاپ", city="tehran", limit=1)
+    if search_res["posts"]:
+        token = search_res["posts"][0]["token"]
+        contents = await inspect_post_images(token, max_images=1)
+        assert len(contents) >= 1
+        assert contents[0].type == "text"
