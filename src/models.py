@@ -12,6 +12,11 @@ class CityInfo(BaseModel):
     slug: str
 
 
+class CategoryMeta(BaseModel):
+    name: str
+    slug: str
+
+
 class DivarPostSummary(BaseModel):
     token: str
     title: str
@@ -38,3 +43,14 @@ class DivarPostDetail(BaseModel):
     published_time: Optional[str] = None
     chat_enabled: bool = False
     raw_data: Optional[Dict[str, Any]] = None
+
+
+class SearchResult(BaseModel):
+    status: str
+    query: str
+    city: str
+    active_category: Optional[CategoryMeta] = None
+    related_categories: List[CategoryMeta] = Field(default_factory=list)
+    available_filters: List[str] = Field(default_factory=list)
+    count: int
+    posts: List[DivarPostSummary]

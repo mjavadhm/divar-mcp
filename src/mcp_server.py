@@ -1,15 +1,13 @@
 """
 MCP Server for Divar (divar-yab)
-Provides tools for searching Divar ads, getting full ad details, and browsing cities/categories.
+Provides tools for searching Divar ads with dynamic categories, multi-turn filters,
+getting full ad details, and browsing cities/categories.
 """
 
 import sys
-import base64
 import logging
-from typing import Optional, List, Dict, Any, Union
-import httpx
+from typing import Optional, List, Dict, Any
 from mcp.server.mcpserver import MCPServer
-import mcp.types as types
 
 from src.divar_client import DivarClient, COMMON_CATEGORIES
 
@@ -25,11 +23,10 @@ client = DivarClient()
 
 mcp = MCPServer(
     name="divar-yab",
-    version="1.0.0",
+    version="1.1.0",
     instructions=(
-        "این سرور امکان جستجو در میان صدها هزار آگهی دیوار (Divar.ir)، "
-        "بررسی قیمت‌ها، خواندن توضیحات کامل آگهی‌ها و مشخصات فنی آن‌ها را فراهم می‌کند. "
-        "می‌توانید برای کاربران آگهی‌ها را پیدا کرده، کیفیت و ارزش خرید آن‌ها را مقایسه کنید."
+        "این سرور امکان جستجوی هوشمند در میان صدها هزار آگهی دیوار (Divar.ir)، "
+        "تشخیص خودکار دسته‌بندی‌ها، ارائه دسته‌های مرتبط و فیلترهای تخصصی هر دسته (مانند کارکرد و سال ساخت خودرو، متراژ و رهن املاک) را فراهم می‌کند."
     ),
 )
 
@@ -37,8 +34,9 @@ mcp = MCPServer(
 @mcp.tool(
     name="search_divar",
     description=(
-        "جستجو در آگهی‌های دیوار بر اساس عنوان، شهر، دسته‌بندی و بازه قیمت. "
-        "خروجی شامل لیستی از آگهی‌ها به همراه عنوان، قیمت، محله، توکن آگهی و لینک مستقیم است."
+        "جستجو در آگهی‌های دیوار با پشتیبانی از تشخیص هوشمند دسته‌بندی، دسته‌های مرتبط پیشنهادی دیوار، "
+        "و فیلترهای تخصصی هر دسته (مانند سال ساخت و کارکرد خودرو، متراژ و رهن املاک، رم و حافظه لپ‌تاپ). "
+        "خروجی شامل لیست آگهی‌ها، دسته فعال، دسته‌های مرتبط پیشنهادی، و فیلترهای در دسترس است."
     ),
 )
 async def search_divar(
@@ -47,36 +45,36 @@ async def search_divar(
     category: Optional[str] = None,
     min_price: Optional[int] = None,
     max_price: Optional[int] = None,
+    filters: Optional[Dict[str, Any]] = None,
     limit: int = 15,
 ) -> Dict[str, Any]:
     """
-    Search for posts on Divar.
+    Search for posts on Divar with intelligent category discovery and dynamic filters.
 
-    :param query: متن جستجو (مثلاً 'مک بوک m1'، 'پراید ۹۵'، 'آپارتمان دو خوابه')
-    :param city: نام یا اسلاگ شهر (مثلاً 'tehran', 'تهران', 'mashhad', 'مشهد', 'shiraz')
-    :param category: اسلاگ دسته‌بندی اختیاری (مثلاً 'laptops', 'auto', 'electronic-devices')
+    :param query: متن جستجو (مثلاً 'سمند', 'تینک پد', 'آپارتمان سعادت آباد')
+    :param city: نام یا اسلاگ شهر (مثلاً 'tehran', 'تهران', 'mashhad')
+    :param category: اسلاگ دسته‌بندی اختیاری (مثلاً 'light', 'laptops', 'residential-rent')
     :param min_price: حداقل قیمت به تومان
     :param max_price: حداکثر قیمت به تومان
+    :param filters: دیکشنری اختیاری فیلترهای تخصصی دسته.
+                    برای خودرو: min_year (مثلاً 1398), max_year, max_mileage (کیلومتر), color (رنگ), gearbox (دنده‌ای/اتومات)
+                    برای املاک: min_size (متراژ), min_credit/max_credit (رهن), min_rent/max_rent (اجاره), has_elevator (bool)
+                    برای دیجیتال: min_ram (گیگابایت), min_storage, cpu
     :param limit: تعداد آگهی‌های بازگشتی (پیش‌فرض ۱۵، حداکثر ۳۰)
     """
-    logger.info(f"Searching Divar: query='{query}', city='{city}', category='{category}'")
+    logger.info(f"Searching Divar: query='{query}', city='{city}', category='{category}', filters={filters}")
     safe_limit = max(1, min(limit, 30))
     try:
-        posts = await client.search(
+        res = await client.search(
             query=query,
             city=city,
             category=category,
             min_price=min_price,
             max_price=max_price,
+            filters=filters,
             limit=safe_limit,
         )
-        return {
-            "status": "success",
-            "query": query,
-            "city": city,
-            "count": len(posts),
-            "posts": [post.model_dump() for post in posts],
-        }
+        return res.model_dump()
     except Exception as e:
         logger.error(f"Search failed: {e}", exc_info=True)
         return {
@@ -89,7 +87,7 @@ async def search_divar(
 @mcp.tool(
     name="get_post_details",
     description=(
-        "دریافت تمام مشخصات، توضیحات کامل فروشنده، قیمت دقیق و ویژگی‌های یک آگهی دیوار با استفاده از توکن یا لینک آگهی."
+        "دریافت تمام مشخصات، توضیحات کامل فروشنده، قیمت دقیق، جدول ویژگی‌های فنی، تصاویر و وضعیت چت یک آگهی با استفاده از توکن یا آدرس آگهی."
     ),
 )
 async def get_post_details(token_or_url: str) -> Dict[str, Any]:
@@ -119,63 +117,8 @@ async def get_post_details(token_or_url: str) -> Dict[str, Any]:
 
 
 @mcp.tool(
-    name="inspect_post_images",
-    description=(
-        "دانلود و تحویل تصاویر واقعی یک آگهی دیوار به هوش مصنوعی جهت ارزیابی بصری، "
-        "بررسی ضربه‌خوردگی، خط و خش، تمیزی ظاهر، اصالت کالا و وضعیت فیزیکی دستگاه با هوش بینایی."
-    ),
-)
-async def inspect_post_images(token_or_url: str, max_images: int = 3) -> List[Union[types.TextContent, types.ImageContent]]:
-    """
-    Fetches real images of a Divar ad and returns them as multimodal ImageContent
-    so the AI vision model can visually inspect the item.
-
-    :param token_or_url: توکن آگهی یا لینک دیوار
-    :param max_images: حداکثر تعداد تصاویر جهت دانلود و بررسی (پیش‌فرض ۳)
-    """
-    logger.info(f"Inspecting images for: {token_or_url}")
-    try:
-        detail = await client.get_post_details(token_or_url)
-        image_urls = detail.images[:max(1, min(max_images, 5))]
-        if not image_urls:
-            return [types.TextContent(type="text", text=f"این آگهی ({detail.title}) تصویری ندارد.")]
-
-        contents: List[Union[types.TextContent, types.ImageContent]] = [
-            types.TextContent(
-                type="text",
-                text=f"تصاویر آگهی «{detail.title}» ({len(image_urls)} تصویر):\n"
-                     f"لینک آگهی: {detail.url}\n"
-                     f"لطفاً وضعیت ظاهری، خط و خش، ضربه‌خوردگی و تمیزی دستگاه را بررسی کنید."
-            )
-        ]
-
-        async with httpx.AsyncClient(timeout=10.0) as http_c:
-            for i, url in enumerate(image_urls):
-                try:
-                    resp = await http_c.get(url)
-                    if resp.status_code == 200:
-                        mime = resp.headers.get("content-type", "image/jpeg").split(";")[0]
-                        b64_data = base64.b64encode(resp.content).decode("utf-8")
-                        contents.append(
-                            types.ImageContent(
-                                type="image",
-                                data=b64_data,
-                                mime_type=mime,
-                            )
-                        )
-                except Exception as img_err:
-                    logger.warning(f"Failed to fetch image {url}: {img_err}")
-
-        return contents
-    except Exception as e:
-        logger.error(f"inspect_post_images error: {e}", exc_info=True)
-        return [types.TextContent(type="text", text=f"خطا در دریافت تصاویر آگهی: {str(e)}")]
-
-
-
-@mcp.tool(
     name="list_cities",
-    description="جستجو و دریافت لیست شهرهای پشتیبانی‌شده در دیوار همراه با اسلاگ و شناسه آن‌ها.",
+    description="جستجو و دریافت لیست ۱۱۷۷ شهر پشتیبانی‌شده در دیوار همراه با اسلاگ و شناسه آن‌ها.",
 )
 async def list_cities(query: Optional[str] = None) -> Dict[str, Any]:
     """
@@ -191,7 +134,7 @@ async def list_cities(query: Optional[str] = None) -> Dict[str, Any]:
         return {
             "status": "success",
             "count": len(cities),
-            "cities": [c.model_dump() for c in cities[:50]],  # cap to top 50
+            "cities": [c.model_dump() for c in cities[:50]],
         }
     except Exception as e:
         logger.error(f"Failed to list cities: {e}", exc_info=True)
@@ -204,7 +147,7 @@ async def list_cities(query: Optional[str] = None) -> Dict[str, Any]:
 
 @mcp.tool(
     name="list_categories",
-    description="دریافت لیست دسته‌بندی‌های متداول دیوار (مانند لپ‌تاپ، خودرو، املاک) جهت استفاده در فیلتر جستجو.",
+    description="دریافت لیست دسته‌بندی‌های متداول دیوار (مانند خودرو، املاک، لپ‌تاپ) جهت استفاده در فیلتر جستجو.",
 )
 async def list_categories() -> Dict[str, Any]:
     """
