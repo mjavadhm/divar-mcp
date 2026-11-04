@@ -116,7 +116,8 @@ class DivarClient:
         self._city_lookup: Optional[Dict[str, CityInfo]] = None
 
     async def _get_client(self) -> httpx.AsyncClient:
-        return httpx.AsyncClient(timeout=self.timeout, headers=self.headers)
+        # trust_env=False ensures direct connection to Divar, completely bypassing system VPN/proxy
+        return httpx.AsyncClient(timeout=self.timeout, headers=self.headers, trust_env=False)
 
     async def fetch_cities(self) -> List[CityInfo]:
         """Fetches and caches the list of all cities from Divar API."""
