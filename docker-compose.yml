@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  divar-mcp:
+    build: .
+    container_name: divar-mcp-server
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - HOST=0.0.0.0
+      # کلید امنیتی دلخواه (اختیاری جهت محدودسازی دسترسی):
+      # - DIVAR_API_KEY=my_secret_token
+      # آدرس دامنه شما با https (جهت OpenAPI چت‌جی‌پی‌تی):
+      # - SERVER_URL=https://divar.yourdomain.com
