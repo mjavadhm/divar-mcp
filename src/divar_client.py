@@ -344,9 +344,14 @@ class DivarClient:
                         specs = det.specifications
                         text_to_check = f"{det.title} {det.description} " + " ".join(f"{k}:{v}" for k, v in specs.items())
 
-                        # Check Car filters
+                        # Check Car / Motorcycle filters
                         if "min_year" in active_filters or "max_year" in active_filters:
-                            year_val = parse_number(specs.get("مدل (سال ساخت)") or specs.get("سال ساخت"))
+                            year_val = parse_number(
+                                specs.get("مدل (سال ساخت)")
+                                or specs.get("سال ساخت")
+                                or specs.get("مدل (سال تولید)")
+                                or specs.get("سال تولید")
+                            )
                             if year_val:
                                 if "min_year" in active_filters and year_val < int(active_filters["min_year"]):
                                     return
@@ -451,7 +456,17 @@ class DivarClient:
                     if text:
                         description = (description + "\n\n" + text).strip() if description else text
 
-                elif w_type in ("UNEXPANDABLE_ROW", "GROUP_INFO_ROW"):
+                elif w_type == "GROUP_INFO_ROW":
+                    items = w_data.get("items", [])
+                    for it in items:
+                        t = it.get("title")
+                        v = it.get("value")
+                        if t and v:
+                            specs[t.strip()] = str(v).strip()
+                            if "قیمت" in t:
+                                price_str = str(v).strip()
+
+                elif w_type == "UNEXPANDABLE_ROW":
                     prop_title = w_data.get("title")
                     prop_val = w_data.get("value")
                     if prop_title and prop_val:
