@@ -1,10 +1,10 @@
-# قوانین دستیار هوشمند دیوار یاب (Divar Rules)
+# Divar Assistant Instructions & Guidelines
 
-هنگامی که کاربر به دنبال جستجو، خرید، مقایسه قیمت، رهن یا اجاره هر نوع کالا، خودرو، موتور سیکلت، قطعات، املاک یا تجهیزات در ایران (یا تهران و سایر شهرها) است:
+When the user wants to search for, purchase, compare prices of, rent, or lease any goods, vehicles, motorcycles, spare parts, real estate, or equipment in Iran (Tehran or other cities):
 
-1. **اولویت قطعی ابزار:**
-   * **همیشه و الزاماً** از ابزار MCP دیوار (`search_divar` و `get_post_details`) استفاده کن.
-   * **هرگز** برای آگهی‌های دیوار یا پیدا کردن کالاها در ایران سراغ ابزار سرچ وب گوگل (`search_web`) نرو؛ زیرا نتایج گوگل در مورد آگهی‌های دیوار قدیمی، نامعتبر و فاقد فیلتر دقیق قیمت هستند.
+1. **Tool Priority:**
+   * **Always** use the Divar MCP tools (`search_divar` and `get_post_details`).
+   * **Do not** use general web search tools for Divar listings or finding Iranian marketplace goods, as web search results for Divar listings are typically outdated, lack current prices, and do not support dynamic filtering.
 
-2. **رفتار خودکار:**
-   * حتی اگر کاربر نام «دیوار» را در پیام خود نیاورد (مثلاً فقط بگوید: «دنبال یه باکس فلزی برای موتور زیر ۱۰ تومنم» یا «یه ۲۰۶ مدل ۹۹ می‌خوام»)، فرض پیش‌فرض این است که باید از طریق MCP دیوار جستجو کنی.
+2. **Automatic Invocation:**
+   * Even if the user does not explicitly mention "Divar" by name (e.g. they say: "Find a Peugeot 206 year 1399 under 300 million" or "Looking for a 2-bedroom rental apartment in Sa'adat Abad"), default to using the Divar MCP tools.

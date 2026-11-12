@@ -21,16 +21,16 @@ DEFAULT_USER_AGENT = (
 
 # Common categories map for convenience
 COMMON_CATEGORIES = {
-    "light": {"name": "خودرو سواری و وانت", "slug": "light", "parent": "vehicles"},
-    "cars": {"name": "خودرو سواری", "slug": "cars", "parent": "vehicles"},
-    "parts-accessories": {"name": "قطعات یدکی و لوازم جانبی خودرو", "slug": "parts-accessories", "parent": "vehicles"},
-    "laptops": {"name": "رایانه همراه (لپ‌تاپ)", "slug": "laptops", "parent": "electronic-devices"},
-    "mobile-phones": {"name": "گوشی موبایل", "slug": "mobile-phones", "parent": "electronic-devices"},
-    "electronic-devices": {"name": "کالای دیجیتال", "slug": "electronic-devices"},
-    "residential-rent": {"name": "رهن و اجاره آپارتمان", "slug": "residential-rent", "parent": "real-estate"},
-    "residential-sell": {"name": "خرید و فروش آپارتمان", "slug": "residential-sell", "parent": "real-estate"},
-    "real-estate": {"name": "املاک", "slug": "real-estate"},
-    "home-kitchen": {"name": "لوازم خانگی", "slug": "home-kitchen"},
+    "light": {"name": "Cars & Light Commercial", "slug": "light", "parent": "vehicles"},
+    "cars": {"name": "Passenger Cars", "slug": "cars", "parent": "vehicles"},
+    "parts-accessories": {"name": "Auto Parts & Accessories", "slug": "parts-accessories", "parent": "vehicles"},
+    "laptops": {"name": "Laptops & Notebooks", "slug": "laptops", "parent": "electronic-devices"},
+    "mobile-phones": {"name": "Mobile Phones", "slug": "mobile-phones", "parent": "electronic-devices"},
+    "electronic-devices": {"name": "Electronic Devices", "slug": "electronic-devices"},
+    "residential-rent": {"name": "Apartment Rent & Mortgage", "slug": "residential-rent", "parent": "real-estate"},
+    "residential-sell": {"name": "Apartment For Sale", "slug": "residential-sell", "parent": "real-estate"},
+    "real-estate": {"name": "Real Estate", "slug": "real-estate"},
+    "home-kitchen": {"name": "Home & Kitchen Appliances", "slug": "home-kitchen"},
 }
 
 PERSIAN_TO_ENGLISH_DIGITS = str.maketrans("۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩", "01234567890123456789")
@@ -59,46 +59,46 @@ def get_available_filters_for_category(category_slug: Optional[str]) -> List[str
     """Returns list of applicable human-readable filter keys for a category."""
     if not category_slug:
         return [
-            "حداقل قیمت تومان (min_price)",
-            "حداکثر قیمت تومان (max_price)",
+            "Minimum price in Tomans (min_price)",
+            "Maximum price in Tomans (max_price)",
         ]
     cat = category_slug.lower()
     if any(k in cat for k in ("cars", "light", "auto", "vehicles")):
         return [
-            "حداقل سال ساخت شمسی (min_year: مثلاً 1398)",
-            "حداکثر سال ساخت شمسی (max_year: مثلاً 1402)",
-            "سقف کارکرد کیلومتر (max_mileage: مثلاً 80000)",
-            "رنگ (color: سفید، مشکی، نقره‌ای، خاکستری و...)",
-            "گیربکس (gearbox: دنده‌ای یا اتوماتیک)",
-            "وضعیت بدنه (body_status: بدون رنگ، دوررنگ، خط و خش جزئی)",
-            "حداقل قیمت تومان (min_price)",
-            "حداکثر قیمت تومان (max_price)",
+            "Minimum solar year (min_year: e.g. 1398)",
+            "Maximum solar year (max_year: e.g. 1402)",
+            "Maximum mileage in km (max_mileage: e.g. 80000)",
+            "Color (color: e.g. white, black, silver, gray)",
+            "Gearbox (gearbox: manual or automatic)",
+            "Body status (body_status: intact, painted, etc.)",
+            "Minimum price in Tomans (min_price)",
+            "Maximum price in Tomans (max_price)",
         ]
     elif any(r in cat for r in ("residential", "commercial", "real-estate", "rent", "sell")):
         return [
-            "حداقل متراژ به متر (min_size: مثلاً 80)",
-            "حداکثر متراژ به متر (max_size: مثلاً 120)",
-            "ودیعه یا رهن به تومان (min_credit / max_credit)",
-            "اجاره ماهیانه به تومان (min_rent / max_rent)",
-            "تعداد اتاق (rooms: 1, 2, 3)",
-            "آسانسور (has_elevator: true/false)",
-            "پارکینگ (has_parking: true/false)",
-            "انباری (has_warehouse: true/false)",
+            "Minimum area in sqm (min_size: e.g. 80)",
+            "Maximum area in sqm (max_size: e.g. 120)",
+            "Deposit/mortgage in Tomans (min_credit / max_credit)",
+            "Monthly rent in Tomans (min_rent / max_rent)",
+            "Number of rooms (rooms: 1, 2, 3)",
+            "Elevator (has_elevator: true/false)",
+            "Parking (has_parking: true/false)",
+            "Storage unit (has_warehouse: true/false)",
         ]
     elif any(d in cat for d in ("laptops", "mobile", "tablet", "computer", "electronic")):
         return [
-            "حداقل رم گیگابایت (min_ram: مثلاً 16 یا 32)",
-            "حداقل حافظه داخلی گیگابایت (min_storage: مثلاً 256 یا 512)",
-            "پردازنده (cpu: مثلاً Ryzen 7 یا Core i7)",
-            "وضعیت دستگاه (condition: نو، در حد نو، کارکرده)",
-            "حداقل قیمت تومان (min_price)",
-            "حداکثر قیمت تومان (max_price)",
+            "Minimum RAM in GB (min_ram: e.g. 16 or 32)",
+            "Minimum storage in GB (min_storage: e.g. 256 or 512)",
+            "Processor (cpu: e.g. Ryzen 7, Core i7, M1)",
+            "Condition (condition: new, like new, used)",
+            "Minimum price in Tomans (min_price)",
+            "Maximum price in Tomans (max_price)",
         ]
     else:
         return [
-            "حداقل قیمت تومان (min_price)",
-            "حداکثر قیمت تومان (max_price)",
-            "وضعیت کالا (condition: نو، در حد نو، کارکرده)",
+            "Minimum price in Tomans (min_price)",
+            "Maximum price in Tomans (max_price)",
+            "Condition (condition: new, like new, used)",
         ]
 
 
@@ -237,7 +237,7 @@ class DivarClient:
 
         # 1. Detect Active Category
         active_cat_slug = data.get("search_data", {}).get("form_data", {}).get("data", {}).get("category", {}).get("str", {}).get("value")
-        active_cat_name = "عمومی"
+        active_cat_name = "General"
         bread_crumb = data.get("seo_details", {}).get("bread_crumb", [])
         if bread_crumb:
             active_cat_name = bread_crumb[0].get("name", active_cat_name)
@@ -247,7 +247,7 @@ class DivarClient:
             name=active_cat_name
         ) if (active_cat_slug or category) else None
 
-        # 2. Extract Related Categories Suggestions (نکته طلایی اسکرین‌شات کاربر)
+        # 2. Extract Related Categories Suggestions
         related_categories: List[CategoryMeta] = []
         widgets = data.get("list_widgets", [])
         for w in widgets:
@@ -288,7 +288,7 @@ class DivarClient:
             if not token:
                 continue
 
-            title = w_data.get("title") or "بدون عنوان"
+            title = w_data.get("title") or "Untitled"
             middle_desc = w_data.get("middle_description_text")  # usually price
             top_desc = w_data.get("top_description_text")        # condition / spec
             bottom_desc = w_data.get("bottom_description_text")  # time & district
@@ -425,7 +425,7 @@ class DivarClient:
         async with await self._get_client() as client:
             resp = await client.get(url)
             if resp.status_code == 404:
-                raise ValueError(f"آگهی با توکن '{token}' در دیوار پیدا نشد.")
+                raise ValueError(f"Post with token '{token}' not found on Divar.")
             resp.raise_for_status()
             data = resp.json()
 
@@ -485,7 +485,7 @@ class DivarClient:
                     district = w_data.get("district")
 
         if not title:
-            title = data.get("seo", {}).get("title") or "بدون عنوان"
+            title = data.get("seo", {}).get("title") or "Untitled"
 
         chat_enabled = bool(data.get("contact", {}).get("chat_enabled"))
         price_toman = parse_price_to_toman(price_str)

@@ -10,7 +10,7 @@ services:
     environment:
       - PORT=8000
       - HOST=0.0.0.0
-      # کلید امنیتی دلخواه (اختیاری جهت محدودسازی دسترسی):
+      # Optional API key to restrict access:
       # - DIVAR_API_KEY=my_secret_token
-      # آدرس دامنه شما با https (جهت OpenAPI چت‌جی‌پی‌تی):
+      # Public server URL with HTTPS (for ChatGPT Custom Actions / OpenAPI):
       # - SERVER_URL=https://divar.yourdomain.com

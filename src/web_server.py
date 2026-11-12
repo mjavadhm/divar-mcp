@@ -45,8 +45,8 @@ async def verify_api_key(api_key: Optional[str] = Security(api_key_header)):
 app = FastAPI(
     title="Divar Assistant API & MCP",
     description=(
-        "یکپارچه‌ساز آگهی‌های دیوار ایران برای هوش مصنوعی (ChatGPT Actions و سرور MCP). "
-        "امکان جستجوی خودرو، املاک، کالای دیجیتال، استعلام قیمت و دریافت مشخصات کامل آگهی‌ها."
+        "Divar (Iran) advertisement integration for AI models (ChatGPT Actions and MCP Server). "
+        "Search vehicles, real estate, electronics, check prices, and fetch full post details."
     ),
     version="1.2.0",
     servers=[{"url": os.getenv("SERVER_URL", "/"), "description": "Current Server"}],
@@ -75,17 +75,17 @@ async def health():
     "/api/search",
     response_model=SearchResult,
     tags=["Divar"],
-    summary="Search ads on Divar (جستجو در دیوار)",
-    description="جستجو در آگهی‌های دیوار با پشتیبانی از شهر، دسته‌بندی و بازه قیمتی به تومان.",
+    summary="Search ads on Divar",
+    description="Search Divar ads with city, category, and price range filtering in Tomans.",
     dependencies=[Depends(verify_api_key)],
 )
 async def search_ads(
-    query: str = Query(..., description="متن جستجو؛ مثلاً 'پژو 206'، 'مک بوک'، 'آپارتمان سعادت آباد'"),
-    city: str = Query("tehran", description="نام یا اسلاگ شهر؛ مثلاً 'tehran', 'تهران', 'mashhad', 'اصفهان'"),
-    category: Optional[str] = Query(None, description="اسلاگ دسته‌بندی؛ مثلاً 'light', 'laptops', 'residential-rent'"),
-    min_price: Optional[int] = Query(None, description="کف قیمت به تومان"),
-    max_price: Optional[int] = Query(None, description="سقف قیمت به تومان"),
-    limit: int = Query(15, ge=1, le=30, description="تعداد نتایج"),
+    query: str = Query(..., description="Search keyword, e.g. 'Peugeot 206', 'MacBook', 'Saadat Abad Apartment'"),
+    city: str = Query("tehran", description="City name or slug, e.g. 'tehran', 'mashhad', 'isfahan'"),
+    category: Optional[str] = Query(None, description="Category slug, e.g. 'light', 'laptops', 'residential-rent'"),
+    min_price: Optional[int] = Query(None, description="Minimum price in Tomans"),
+    max_price: Optional[int] = Query(None, description="Maximum price in Tomans"),
+    limit: int = Query(15, ge=1, le=30, description="Maximum number of results"),
 ):
     try:
         return await client.search(
@@ -97,15 +97,15 @@ async def search_ads(
             limit=limit,
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"خطا در جستجو: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Search failed: {str(e)}")
 
 
 @app.get(
     "/api/posts/{token}",
     response_model=DivarPostDetail,
     tags=["Divar"],
-    summary="Get ad details (مشخصات کامل آگهی)",
-    description="دریافت تمام مشخصات فنی، توضیحات فروشنده، تصاویر و قیمت با توکن آگهی.",
+    summary="Get ad details",
+    description="Retrieve all technical specifications, seller description, images, and price using post token.",
     dependencies=[Depends(verify_api_key)],
 )
 async def get_post(token: str):
@@ -120,10 +120,10 @@ async def get_post(token: str):
 @app.get(
     "/api/cities",
     tags=["Metadata"],
-    summary="List supported cities (لیست شهرها)",
+    summary="List supported cities",
     dependencies=[Depends(verify_api_key)],
 )
-async def list_cities(query: Optional[str] = Query(None, description="فیلتر نام یا اسلاگ شهر")):
+async def list_cities(query: Optional[str] = Query(None, description="Filter by city name or slug")):
     cities = await client.fetch_cities()
     if query:
         q = query.strip().lower()
@@ -134,7 +134,7 @@ async def list_cities(query: Optional[str] = Query(None, description="فیلتر
 @app.get(
     "/api/categories",
     tags=["Metadata"],
-    summary="List common categories (دسته‌بندی‌های متداول)",
+    summary="List common categories",
     dependencies=[Depends(verify_api_key)],
 )
 async def list_categories():

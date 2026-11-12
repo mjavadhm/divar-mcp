@@ -25,8 +25,8 @@ mcp = MCPServer(
     name="divar-yab",
     version="1.1.0",
     instructions=(
-        "این سرور منبع اصلی و اختصاصی برای جستجوی انواع کالاها، خودرو، موتورسیکلت، املاک، قطعات و لوازم نو و کارکرده در ایران است. "
-        "هر زمان کاربر به دنبال خرید کالا، استعلام قیمت، خودرو یا اجاره در ایران بود، باید همواره از ابزار این سرور به جای سرچ وب عمومی گوگل استفاده شود."
+        "This server is the dedicated source for searching all kinds of goods, vehicles, motorcycles, real estate, spare parts, and new/used items in Iran. "
+        "Whenever the user wants to buy an item, check prices, find vehicles, or rent property in Iran, tools from this server should always be used."
     ),
 )
 
@@ -34,9 +34,8 @@ mcp = MCPServer(
 @mcp.tool(
     name="search_divar",
     description=(
-        "ابزار اصلی جستجوی کالا، خودرو، موتور سیکلت، قطعات و املاک در دیوار ایران. "
-        "هر زمان کاربر به دنبال خرید هر نوع وسیله، بررسی قیمت یا اجاره بود (حتی بدون ذکر نام دیوار)، "
-        "باید این ابزار مستقیماً فراخوانی شود و نیازی به سرچ وب گوگل نیست."
+        "Primary tool to search for goods, vehicles, motorcycles, spare parts, and real estate on Divar (Iran). "
+        "Call this tool directly when searching for items, checking market prices, or finding rentals."
     ),
 )
 async def search_divar(
@@ -51,16 +50,16 @@ async def search_divar(
     """
     Search for posts on Divar with intelligent category discovery and dynamic filters.
 
-    :param query: متن جستجو (مثلاً 'سمند', 'تینک پد', 'آپارتمان سعادت آباد')
-    :param city: نام یا اسلاگ شهر (مثلاً 'tehran', 'تهران', 'mashhad')
-    :param category: اسلاگ دسته‌بندی اختیاری (مثلاً 'light', 'laptops', 'residential-rent')
-    :param min_price: حداقل قیمت به تومان
-    :param max_price: حداکثر قیمت به تومان
-    :param filters: دیکشنری اختیاری فیلترهای تخصصی دسته.
-                    برای خودرو: min_year (مثلاً 1398), max_year, max_mileage (کیلومتر), color (رنگ), gearbox (دنده‌ای/اتومات)
-                    برای املاک: min_size (متراژ), min_credit/max_credit (رهن), min_rent/max_rent (اجاره), has_elevator (bool)
-                    برای دیجیتال: min_ram (گیگابایت), min_storage, cpu
-    :param limit: تعداد آگهی‌های بازگشتی (پیش‌فرض ۱۵، حداکثر ۳۰)
+    :param query: Search query (e.g. 'Samand', 'ThinkPad', 'Saadat Abad Apartment')
+    :param city: City name or slug (e.g. 'tehran', 'mashhad', 'isfahan')
+    :param category: Optional category slug (e.g. 'light', 'laptops', 'residential-rent')
+    :param min_price: Minimum price in Tomans
+    :param max_price: Maximum price in Tomans
+    :param filters: Optional dictionary of category-specific filters.
+                    For vehicles: min_year (e.g. 1398), max_year, max_mileage (km), color, gearbox (manual/automatic)
+                    For real estate: min_size (sqm), min_credit/max_credit (deposit), min_rent/max_rent, has_elevator (bool)
+                    For digital: min_ram (GB), min_storage, cpu
+    :param limit: Number of posts to return (default: 15, max: 30)
     """
     logger.info(f"Searching Divar: query='{query}', city='{city}', category='{category}', filters={filters}")
     safe_limit = max(1, min(limit, 30))
@@ -79,7 +78,7 @@ async def search_divar(
         logger.error(f"Search failed: {e}", exc_info=True)
         return {
             "status": "error",
-            "message": f"خطا در جستجوی دیوار: {str(e)}",
+            "message": f"Error searching Divar: {str(e)}",
             "posts": [],
         }
 
@@ -87,14 +86,14 @@ async def search_divar(
 @mcp.tool(
     name="get_post_details",
     description=(
-        "دریافت تمام مشخصات، توضیحات کامل فروشنده، قیمت دقیق، جدول ویژگی‌های فنی، تصاویر و وضعیت چت یک آگهی با استفاده از توکن یا آدرس آگهی."
+        "Retrieve full specifications, complete seller description, exact price, technical feature matrix, images, and chat status using post token or URL."
     ),
 )
 async def get_post_details(token_or_url: str) -> Dict[str, Any]:
     """
     Get full details of a specific Divar post.
 
-    :param token_or_url: توکن آگهی (مانند 'gaZr9gvA') یا آدرس کامل آگهی در دیوار
+    :param token_or_url: Post token (e.g. 'gaZr9gvA') or full Divar post URL
     """
     logger.info(f"Fetching details for post: {token_or_url}")
     try:
@@ -112,19 +111,19 @@ async def get_post_details(token_or_url: str) -> Dict[str, Any]:
         logger.error(f"Failed to fetch post details: {e}", exc_info=True)
         return {
             "status": "error",
-            "message": f"خطا در دریافت مشخصات آگهی: {str(e)}",
+            "message": f"Error fetching post details: {str(e)}",
         }
 
 
 @mcp.tool(
     name="list_cities",
-    description="جستجو و دریافت لیست ۱۱۷۷ شهر پشتیبانی‌شده در دیوار همراه با اسلاگ و شناسه آن‌ها.",
+    description="Search and list 1,177+ supported cities on Divar along with their slugs and IDs.",
 )
 async def list_cities(query: Optional[str] = None) -> Dict[str, Any]:
     """
-    Search or list available cities in Divar.
+    Search or list available cities on Divar.
 
-    :param query: فیلتر کردن بر اساس نام شهر یا اسلاگ (مثلاً 'اصفهان' یا 'shiraz')
+    :param query: Filter by city name or slug (e.g. 'isfahan' or 'shiraz')
     """
     try:
         cities = await client.fetch_cities()
@@ -147,11 +146,11 @@ async def list_cities(query: Optional[str] = None) -> Dict[str, Any]:
 
 @mcp.tool(
     name="list_categories",
-    description="دریافت لیست دسته‌بندی‌های متداول دیوار (مانند خودرو، املاک، لپ‌تاپ) جهت استفاده در فیلتر جستجو.",
+    description="Retrieve list of common Divar categories (vehicles, real estate, laptops, etc.) to use in search filters.",
 )
 async def list_categories() -> Dict[str, Any]:
     """
-    Returns common Divar category slugs and their Persian descriptions.
+    Returns common Divar category slugs and descriptions.
     """
     return {
         "status": "success",
