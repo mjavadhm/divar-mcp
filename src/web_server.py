@@ -1,11 +1,12 @@
 """
 Unified Server for Divar:
 1. REST API + OpenAPI Schema for ChatGPT Custom GPT Actions
-2. MCP (SSE / Streamable HTTP) for Claude Desktop, Cursor, and other MCP clients
+2. MCP (Streamable HTTP & SSE) for Gemini, Antigravity, Claude Desktop, Cursor, and other MCP clients
 """
 
 import os
 import sys
+import contextlib
 from pathlib import Path
 from typing import Optional, List, Dict, Any
 
@@ -26,6 +27,7 @@ for proxy_var in [
 from fastapi import FastAPI, Query, HTTPException, Header, Security, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security.api_key import APIKeyHeader
+from mcp.server.transport_security import TransportSecuritySettings
 
 from src.divar_client import DivarClient, COMMON_CATEGORIES
 from src.mcp_server import mcp
@@ -42,17 +44,28 @@ async def verify_api_key(api_key: Optional[str] = Security(api_key_header)):
     return api_key
 
 
+@contextlib.asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Run the MCP Streamable HTTP session manager lifecycle
+    if hasattr(mcp, "session_manager"):
+        async with mcp.session_manager.run():
+            yield
+    else:
+        yield
+
+
 app = FastAPI(
     title="Divar Assistant API & MCP",
     description=(
-        "Divar (Iran) advertisement integration for AI models (ChatGPT Actions and MCP Server). "
+        "Divar (Iran) advertisement integration for AI models (Gemini Developer Mode, Antigravity, ChatGPT Actions, and MCP Clients). "
         "Search vehicles, real estate, electronics, check prices, and fetch full post details."
     ),
-    version="1.2.0",
+    version="1.3.0",
+    lifespan=lifespan,
     servers=[{"url": os.getenv("SERVER_URL", "/"), "description": "Current Server"}],
 )
 
-# Enable CORS for ChatGPT and web apps
+# Enable CORS for Gemini, ChatGPT, and web apps
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -60,6 +73,15 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def rewrite_mcp_path(request, call_next):
+    # Normalize /mcp without trailing slash to /mcp/ to prevent 307 redirects for POST clients
+    if request.url.path == "/mcp":
+        request.scope["path"] = "/mcp/"
+    return await call_next(request)
+
 
 client = DivarClient()
 
@@ -141,23 +163,24 @@ async def list_categories():
     return {"categories": COMMON_CATEGORIES}
 
 
-# ---------------- MCP MOUNT (For Claude Desktop, Cursor, Remote MCP) ----------------
-# Mounts MCP SSE transport at /mcp/sse and /mcp/messages
+# ---------------- MCP MOUNT (Streamable HTTP for Gemini, Antigravity, and Claude) ----------------
 try:
-    mcp_app = mcp.sse_app()
-    app.mount("/mcp", mcp_app)
+    # Disable DNS rebinding checks to allow reverse proxies, tunnels, and remote hosts
+    security = TransportSecuritySettings(enable_dns_rebinding_protection=False)
+    mcp_streamable_app = mcp.streamable_http_app(streamable_http_path="/", transport_security=security)
+    app.mount("/mcp", mcp_streamable_app)
 except Exception as mcp_err:
-    print(f"Warning: Failed to mount MCP SSE app: {mcp_err}")
+    print(f"Warning: Failed to mount MCP Streamable HTTP app: {mcp_err}")
 
 
 def main():
     import uvicorn
-    port = int(os.getenv("PORT", 8000))
+    port = int(os.getenv("PORT", 8765))
     host = os.getenv("HOST", "0.0.0.0")
     print(f"Starting Divar Unified Server on http://{host}:{port}")
     print(f"Swagger Docs / OpenAPI: http://{host}:{port}/docs")
     print(f"OpenAPI Schema for ChatGPT: http://{host}:{port}/openapi.json")
-    print(f"MCP SSE Endpoint: http://{host}:{port}/mcp/sse")
+    print(f"MCP Streamable HTTP Endpoint (Gemini & Antigravity): http://{host}:{port}/mcp")
     uvicorn.run("src.web_server:app", host=host, port=port, reload=False)
 
 

@@ -14,8 +14,8 @@ RUN pip install --no-cache-dir -r requirements.txt && \
 COPY src/ ./src/
 COPY run_server.py ./
 
-ENV PORT=8000
+ENV PORT=8765
 ENV HOST=0.0.0.0
-EXPOSE 8000
+EXPOSE 8765
 
 CMD ["python3", "-m", "src.web_server"]
